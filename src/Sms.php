@@ -8,8 +8,8 @@ namespace gzdata;
  */
 class Sms {
 
-    protected $app_id = null;
-    protected $app_secret = null;
+    protected $account = null;
+    protected $password = null;
     // 调试模式
     protected $debug = false;
 
@@ -22,10 +22,10 @@ class Sms {
     protected $client;
 
 
-    public function __construct($app_id='', $app_secret='', $debug=false)
+    public function __construct($account='', $password='', $debug=false)
     {
-        $this->app_id = $app_id;
-        $this->app_secret = $app_secret;
+        $this->account = $account;
+        $this->password = $password;
         $this->debug = $debug;
 
 
@@ -70,8 +70,8 @@ class Sms {
 
         // 参数
         $postData = [
-            'account'    => $_ENV['ACCOUNT'],
-            'password'   => $_ENV['PASSWORD'],
+            'account'    => $this->account,
+            'password'   => $this->password,
             'mobile'     => $mobile,
             'content'    => $content,
             'requestId'  => $reqId,

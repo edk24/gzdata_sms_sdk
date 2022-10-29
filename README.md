@@ -1,12 +1,11 @@
 
-# 聚美智数SDK
+# 云上贵州短信SDK
 
-[官网](https://my.jumdata.com/home)
 
 **安装**
 
 ```
-composer require yuxiaobo/jumdata
+composer require yuxiaobo/gzdata_sms_sdk
 ```
 
 ## 单元测试
@@ -19,16 +18,14 @@ composer require yuxiaobo/jumdata
 > 已完成
 
 - send 发送短信
-- detail 查询短信发送详情
-- getSignList 查询短信签名列表
-- getTemplateList 查询短信模板列表
+- sendRawContent 发送自定义短信
 
 
 #### 发送短信
 
 ```php
-$sms = new Sms($_ENV['APPID'], $_ENV['APPSECRET']);
-list($success, $response) = $sms->send('183****014', 'MB7**3B8', ['5678']);
+$sms = new Sms($_ENV['ACCOUNT'], $_ENV['PASSWORD']);
+list($success, $response) = $sms->send('183****014', '无需填入, 兼容jumdata语法', ['5678']);
 
 if ($success == false) {
     // 短信发送失败

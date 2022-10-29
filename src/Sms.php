@@ -1,6 +1,6 @@
 <?php
 
-namespace jumdata;
+namespace gzdata;
 
 
 /**
@@ -14,11 +14,26 @@ class Sms {
     protected $debug = false;
 
 
+    /**
+     * client
+     *
+     * @var \GuzzleHttp\Client
+     */
+    protected $client;
+
+
     public function __construct($app_id='', $app_secret='', $debug=false)
     {
         $this->app_id = $app_id;
         $this->app_secret = $app_secret;
         $this->debug = $debug;
+
+
+        $this->client = new \GuzzleHttp\Client([
+            'base_uri'  => 'http://sendsms.gzdata.com.cn',
+            'verify'    => false, // 忽略 ssl
+            'timeout'   => 0
+        ]);
     }
 
 
@@ -32,29 +47,8 @@ class Sms {
      * @throws \GuzzleHttp\Exception\*
      */
     public function send(string $mobile, string $template_id, array $tag=[]):array {
-        $client = new \GuzzleHttp\Client([
-            'base_uri'        => 'https://api.jumdata.com/',
-            'timeout'         => 0,
-            'debug'           => $this->debug
-        ]);
-        $data = [
-            ['name' => 'appId', 'contents'=>$this->app_id],
-            ['name' => 'timestamp', 'contents'=>time()*1000],
-            ['name' => 'receive', 'contents'=>$mobile],
-            ['name' => 'templateId', 'contents'=>$template_id],
-            ['name' => 'tag', 'contents'=>implode('|', $tag)],
-            ['name' => 'sign', 'contents'=>hash('sha256', $this->app_id . $this->app_secret . time()*1000)],
-        ];
-
-        $response = $client->post('/sms/send', ['multipart' => $data]);
-        $responseArr = json_decode($response->getBody()->getContents(), true);
-
-        $success = false;
-        if (isset($responseArr['success']) && $responseArr['success'] == true) {
-            $success = true;
-        }
-        
-        return [$success, $responseArr];
+        $content = sprintf('验证码为： % s，若非本人操作，请勿泄露。', $tag[0]??'0000'); // 兼容jumdata的短信sdk做法,  实际只用来发验证码
+        return $this->sendRawContent($mobile, $content);
     }
 
 
@@ -67,132 +61,31 @@ class Sms {
      * @param string $mobile
      * @param string $content
      * @return array [bool:success, array:responseArr]
-     * @deprecated 
      * @throws \GuzzleHttp\Exception\*
      */
     public function sendRawContent(string $mobile, string $content):array 
     {
-        throw new \RuntimeException('不支持');
-    }
+        // 请求ID
+        $reqId = md5(microtime(true) . uniqid('sms'));
 
-
-
-
-
-    /**
-     * 查询短信发送详情
-     *
-     * @param string $taskid
-     * @return array [bool:success, array:responseArr]
-     * @throws \GuzzleHttp\Exception\*
-     */
-    public function detail(string $taskid, string $mobile):array {
-        $client = new \GuzzleHttp\Client([
-            'base_uri'        => 'https://api.jumdata.com/',
-            'timeout'         => 0,
-            'debug'           => $this->debug
-        ]);
-        
-        $query = http_build_query([
-            'appId'     => $this->app_id,
-            'timestamp' => time()*1000,
-            'sign'      => hash('sha256', $this->app_id . $this->app_secret . time()*1000),
-            'taskId'    => $taskid,
-            'mobile'    => $mobile
-        ]);
-
-        $response = $client->get('/sms/detail?' . $query);
-        $responseArr = json_decode($response->getBody()->getContents(), true);
-        
-        $success = false;
-        if (isset($responseArr['success']) && $responseArr['success'] == true) {
-            $success = true;
-        }
-
-        return [$success, $responseArr];
-    }
-
-
-
-
-
-    /**
-     * 查询短信签名列表
-     *
-     * @param string $signId 可空，指定短信签名id，留空查询所有
-     * @return array [bool:success, array:responseArr]
-     * @throws \GuzzleHttp\Exception\*
-     */
-    public function getSignList(string $sign_id=''):array {
-        $client = new \GuzzleHttp\Client([
-            'base_uri'        => 'https://api.jumdata.com/',
-            'timeout'         => 0,
-            'debug'           => $this->debug
-        ]);
-        
-        $query = http_build_query([
-            'appId'     => $this->app_id,
-            'timestamp' => time()*1000,
-            'sign'      => hash('sha256', $this->app_id . $this->app_secret . time()*1000),
-            'signId'    => $sign_id,
-        ]);
-
-        $response = $client->get('/sms/sign/list?' . $query);
-        $responseArr = json_decode($response->getBody()->getContents(), true);
-
-        $success = false;
-        if (isset($responseArr['success']) && $responseArr['success'] == true) {
-            $success = true;
-        }
-
-        return [$success, $responseArr];
-    }
-
-
-
-
-
-
-    /**
-     * 查询短信模板列表
-     *
-     * @param string $template_id 可空，指定查询短信模板，留空查询所有
-     * @return array [bool:success, array:responseArr]
-     * @throws \GuzzleHttp\Exception\*
-     */
-    public function getTemplateList(string $template_id=''):array {
-        $client = new \GuzzleHttp\Client([
-            'base_uri'        => 'https://api.jumdata.com/',
-            'timeout'         => 0,
-            'debug'           => $this->debug
-        ]);
-        $data = [
-            [
-                'name'      => 'appId',
-                'contents'  => $this->app_id,
-            ],
-            [
-                'name'      => 'timestamp',
-                'contents'  => time()*1000,
-            ],
-            [
-                'name'      => 'templateId',
-                'contents'  => $template_id,
-            ],
-            [
-                'name'      => 'sign',
-                'contents'  => hash('sha256', $this->app_id . $this->app_secret . time()*1000)
-            ]
+        // 参数
+        $postData = [
+            'account'    => $_ENV['ACCOUNT'],
+            'password'   => $_ENV['PASSWORD'],
+            'mobile'     => $mobile,
+            'content'    => $content,
+            'requestId'  => $reqId,
         ];
-        $response = $client->post('/sms/template/list', ['multipart' => $data]);
 
-        $responseArr = json_decode($response->getBody()->getContents(), true);
+        $response = $this->client->post('/smsapi/smsapi/send.json', array(
+            'json'      => $postData,
+        ));
 
-        $success = false;
-        if (isset($responseArr['success']) && $responseArr['success'] == true) {
-            $success = true;
-        }
+        $respText = $response->getBody()->getContents();
+        $respArr = json_decode($respText, true);
+        $success = ($respArr['status'] == 10 && $respArr['errorCode'] == 'ALLSuccess');
 
-        return [$success, $responseArr];
+        return [$success, $respArr];
     }
+
 }

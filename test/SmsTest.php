@@ -1,8 +1,9 @@
 <?php
-namespace jumdata\test;
+namespace gzdata\test;
 
 // require_once '../src/Sms.php';
-use jumdata\Sms;
+
+use gzdata\Sms;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Dotenv\Dotenv;
 
@@ -12,46 +13,31 @@ $env->load(dirname(__DIR__) . '/.env');
 class SmsTest extends TestCase  {
 
 
-
     /**
      * 测试发送短信
      * @test
      * @return void
      */
     public function testSend() {
-        $sms = new Sms($_ENV['APPID'], $_ENV['APPSECRET']);
+        $sms = new Sms($_ENV['ACCOUNT'], $_ENV['PASSWORD']);
         list($success, $response) = $sms->send('18311548014', 'MB717503B8', ['5678']);
         $this->assertTrue($success);
         $this->assertIsArray($response);
     }
 
-    /**
-     * 查询模板列表
-     * @test
-     */
-    public function testGetTemplateList() {
-        $sms = new Sms($_ENV['APPID'], $_ENV['APPSECRET']);
-        list($success, $response) = $sms->getTemplateList();
-        $this->assertTrue($success);
-    }
 
     /**
-     * 获取短信发送状态
+     * 测试发送自定义短信
      * @test
+     * @return void
      */
-    public function testDetail() {
-        $sms = new Sms($_ENV['APPID'], $_ENV['APPSECRET']);
-        list($success, $response) = $sms->detail('JS6656739414542289', '18311548014');
+    public function testSendRaw()
+    {
+        $sms = new Sms($_ENV['ACCOUNT'], $_ENV['PASSWORD']);
+        list($success, $response) = $sms->sendRawContent('18311548014', '测试测试测试单元测试');
         $this->assertTrue($success);
+        $this->assertIsArray($response);
     }
+  
 
-    /**
-     * 查询短信签名
-     * @test
-     */
-    public function testGetSignList() {
-        $sms = new Sms($_ENV['APPID'], $_ENV['APPSECRET']);
-        list($success, $response) = $sms->getSignList();
-        $this->assertTrue($success);
-    }
 }

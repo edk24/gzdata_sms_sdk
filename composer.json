@@ -1,6 +1,6 @@
 {
-    "name": "yuxiaobo/jumdata",
-    "description": "聚美智数接口",
+    "name": "yuxiaobo/gzdata_sms_sdk",
+    "description": "云上贵州短信SDK",
     "license": "mit",
     "authors": [
         {
@@ -14,7 +14,7 @@
     },
     "autoload": {
         "psr-4": {
-          "jumdata\\": "src/"
+          "gzdata\\": "src/"
         }
       },
     "minimum-stability": "dev",
